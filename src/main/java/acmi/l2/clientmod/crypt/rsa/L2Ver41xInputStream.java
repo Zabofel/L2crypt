@@ -13,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NON INFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -36,9 +36,8 @@ import java.util.Objects;
 import java.util.zip.InflaterInputStream;
 
 public final class L2Ver41xInputStream extends FilterInputStream implements L2Ver41x {
-    private int size;
+    private final int size;
 
-    @SuppressWarnings("ConstantConditions")
     public L2Ver41xInputStream(InputStream input, BigInteger modulus, BigInteger exponent) throws IOException, CryptoException {
         super(null);
         RSAInputStream rsaInputStream = new RSAInputStream(Objects.requireNonNull(input, "stream"),
@@ -53,11 +52,10 @@ public final class L2Ver41xInputStream extends FilterInputStream implements L2Ve
     }
 
     public static class RSAInputStream extends InputStream {
-        private DataInputStream input;
+        private final DataInputStream input;
+        private final Cipher cipher;
+        private final byte[] buffer = new byte[128];
 
-        private Cipher cipher;
-
-        private byte[] buffer = new byte[128];
         private int startPosition;
         private int position;
         private int size;
@@ -88,7 +86,7 @@ public final class L2Ver41xInputStream extends FilterInputStream implements L2Ve
                 while (remaining > 0) {
                     int count = input.read(buffer, buffer.length - remaining, remaining);
                     if (count < 0)
-                        return false;
+                        return true;
                     remaining -= count;
                 }
 
@@ -105,13 +103,13 @@ public final class L2Ver41xInputStream extends FilterInputStream implements L2Ve
                 startPosition = 128 - size - ((124 - size) % 4);
                 position = 0;
             }
-            return true;
+            return false;
         }
 
         @Override
         public int read() throws IOException {
             ensureOpen();
-            if (!ensureFilled())
+            if (ensureFilled())
                 return -1;
 
             return buffer[startPosition + position++] & 0xFF;
@@ -126,7 +124,7 @@ public final class L2Ver41xInputStream extends FilterInputStream implements L2Ve
             }
 
             ensureOpen();
-            if (!ensureFilled())
+            if (ensureFilled())
                 return -1;
 
             int read = Math.min(len, available());

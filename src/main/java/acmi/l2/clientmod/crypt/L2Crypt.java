@@ -48,7 +48,24 @@ public class L2Crypt
 {
 	public static final int NO_CRYPT = -1;
 
-	private static final BigInteger[][] RSA_KEYS = new BigInteger[][]{{MODULUS_411, PRIVATE_EXPONENT_411}, {MODULUS_412, PRIVATE_EXPONENT_412}, {MODULUS_413, PRIVATE_EXPONENT_413}, {MODULUS_414, PRIVATE_EXPONENT_414}};
+	private static final BigInteger[][] RSA_KEYS = new BigInteger[][]{
+			{
+					MODULUS_411,
+					PRIVATE_EXPONENT_411
+			},
+			{
+					MODULUS_412,
+					PRIVATE_EXPONENT_412
+			},
+			{
+					MODULUS_413,
+					PRIVATE_EXPONENT_413
+			},
+			{
+					MODULUS_414,
+					PRIVATE_EXPONENT_414
+			}
+	};
 	private static BigInteger publicModulus = MODULUS_L2ENCDEC;
 	private static BigInteger publicExponent = PUBLIC_EXPONENT_L2ENCDEC;
 
@@ -71,7 +88,7 @@ public class L2Crypt
 		byte[] header = new byte[HEADER_SIZE];
 		new DataInputStream(input).readFully(header);
 		String headerStr = new String(header, StandardCharsets.UTF_16LE);
-		if (!headerStr.matches("Lineage2Ver\\d{3}")) return NO_CRYPT;
+		if (!headerStr.matches("Lineage2Ver\\d{3}")) { return NO_CRYPT; }
 
 		return Integer.parseInt(headerStr.substring(11));
 	}
@@ -89,8 +106,13 @@ public class L2Crypt
 	public static InputStream decrypt(InputStream input, String fileName) throws IOException, CryptoException
 	{
 		int version = readHeader(input);
-		switch (version) {
+		switch (version)
+		{
 			case NO_CRYPT:
+				// reset header
+				if (input instanceof FileInputStream) {
+					((FileInputStream) input).getChannel().position(0);
+				}
 				return input;
 			//XOR
 			case 811:
@@ -139,10 +161,11 @@ public class L2Crypt
 
 	public static OutputStream encrypt(OutputStream output, String fileName, int version) throws IOException, CryptoException
 	{
-		if (version == NO_CRYPT) return output;
+		if (version == NO_CRYPT) { return output; }
 
 		writeHeader(output, version);
-		switch (version) {
+		switch (version)
+		{
 			//XOR
 			case 811:
 			case 821:
