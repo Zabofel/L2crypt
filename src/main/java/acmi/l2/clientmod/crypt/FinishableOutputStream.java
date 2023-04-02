@@ -26,44 +26,44 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public class FinishableOutputStream extends FilterOutputStream {
-    /**
-     * Creates an output stream filter built on top of the specified
-     * underlying output stream.
-     *
-     * @param out the underlying output stream to be assigned to
-     *            the field <tt>this.out</tt> for later use, or
-     *            <code>null</code> if this instance is to be
-     *            created without an underlying stream.
-     */
-    public FinishableOutputStream(OutputStream out) {
-        super(out);
-    }
+	/**
+	 * Creates an output stream filter built on top of the specified
+	 * underlying output stream.
+	 *
+	 * @param out the underlying output stream to be assigned to
+	 *            the field <tt>this.out</tt> for later use, or
+	 *            <code>null</code> if this instance is to be
+	 *            created without an underlying stream.
+	 */
+	public FinishableOutputStream(OutputStream out) {
+		super(out);
+	}
 
-    /**
-     * Finishes writing and flushes data to the output stream without closing
-     * the underlying stream.
-     *
-     * @throws IOException if an I/O error has occurred
-     */
-    public void finish() throws IOException {
-    }
+	/**
+	 * Finishes writing and flushes data to the output stream without closing
+	 * the underlying stream.
+	 *
+	 * @throws IOException if an I/O error has occurred
+	 */
+	public void finish() throws IOException {
+	}
 
-    /**
-     * Closes this output stream and releases any system resources
-     * associated with this stream. The general contract of <code>close</code>
-     * is that it closes the output stream. A closed stream cannot perform
-     * output operations and cannot be reopened.
-     * <p>
-     * The <code>close</code> method of <code>FinishableOutputStream</code> call <code>finish</code> method.
-     *
-     * @throws IOException if an I/O error occurs.
-     */
-    @Override
-    public void close() throws IOException {
-        try {
-            finish();
-        } finally {
-            out.close();
-        }
-    }
+	/**
+	 * Closes this output stream and releases any system resources
+	 * associated with this stream. The general contract of <code>close</code>
+	 * is that it closes the output stream. A closed stream cannot perform
+	 * output operations and cannot be reopened.
+	 * <p>
+	 * The <code>close</code> method of <code>FinishableOutputStream</code> call <code>finish</code> method.
+	 *
+	 * @throws IOException if an I/O error occurs.
+	 */
+	@Override
+	public void close() throws IOException {
+		try {
+			finish();
+		} finally {
+			// out.close(); 
+		}
+	}
 }

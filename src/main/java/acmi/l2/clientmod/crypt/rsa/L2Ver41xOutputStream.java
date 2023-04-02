@@ -39,99 +39,100 @@ import java.util.Objects;
 import java.util.zip.DeflaterOutputStream;
 
 public final class L2Ver41xOutputStream extends FinishableOutputStream implements L2Ver41x {
-    private ByteArrayOutputStream dataBuffer = new ByteArrayOutputStream(0);
+	private ByteArrayOutputStream dataBuffer = new ByteArrayOutputStream(0);
 
-    private boolean finished;
+	private boolean finished;
 
-    public L2Ver41xOutputStream(OutputStream output, BigInteger modulus, BigInteger exponent) {
-        super(new RSAOutputStream(Objects.requireNonNull(output, "stream"), Objects.requireNonNull(modulus, "modulus"), Objects.requireNonNull(exponent, "exponent")));
-    }
+	public L2Ver41xOutputStream(OutputStream output, BigInteger modulus, BigInteger exponent) {
+		super(new RSAOutputStream(Objects.requireNonNull(output, "stream"), Objects.requireNonNull(modulus, "modulus"),
+				Objects.requireNonNull(exponent, "exponent")));
+	}
 
-    @Override
-    public void write(int b) throws IOException {
-        if (finished)
-            throw new IOException("write beyond end of stream");
+	@Override
+	public void write(int b) throws IOException {
+		if (finished)
+			throw new IOException("write beyond end of stream");
 
-        dataBuffer.write(b);
-    }
+		dataBuffer.write(b);
+	}
 
-    @Override
-    public void finish() throws IOException {
-        if (finished)
-            return;
+	@Override
+	public void finish() throws IOException {
+		if (finished)
+			return;
 
-        finished = true;
+		finished = true;
 
-        new DataOutputStream(out).writeInt(Integer.reverseBytes(dataBuffer.size()));
+		new DataOutputStream(out).writeInt(Integer.reverseBytes(dataBuffer.size()));
 
-        DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(out);
-        dataBuffer.writeTo(deflaterOutputStream);
-        deflaterOutputStream.finish();
+		DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(out);
+		dataBuffer.writeTo(deflaterOutputStream);
+		deflaterOutputStream.finish();
 
-        ((RSAOutputStream) out).finish();
-    }
+		((RSAOutputStream) out).finish();
+	}
 
-    private static class RSAOutputStream extends FinishableOutputStream {
-        private Cipher cipher;
+	private static class RSAOutputStream extends FinishableOutputStream {
+		private Cipher cipher;
 
-        private ByteBuffer dataBuffer = ByteBuffer.allocate(124);
-        private byte[] block = new byte[128];
+		private ByteBuffer dataBuffer = ByteBuffer.allocate(124);
+		private byte[] block = new byte[128];
 
-        private boolean finished;
+		private boolean finished;
 
-        public RSAOutputStream(OutputStream output, BigInteger modulus, BigInteger exponent) {
-            super(output);
+		public RSAOutputStream(OutputStream output, BigInteger modulus, BigInteger exponent) {
+			super(output);
 
-            try {
-                KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-                RSAPublicKeySpec keySpec = new RSAPublicKeySpec(modulus, exponent);
-                cipher = Cipher.getInstance("RSA/ECB/NoPadding");
-                cipher.init(Cipher.ENCRYPT_MODE, keyFactory.generatePublic(keySpec));
-            } catch (GeneralSecurityException e) {
-                throw new CryptoException(e);
-            }
-        }
+			try {
+				KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+				RSAPublicKeySpec keySpec = new RSAPublicKeySpec(modulus, exponent);
+				cipher = Cipher.getInstance("RSA/ECB/NoPadding");
+				cipher.init(Cipher.ENCRYPT_MODE, keyFactory.generatePublic(keySpec));
+			} catch (GeneralSecurityException e) {
+				throw new CryptoException(e);
+			}
+		}
 
-        @Override
-        public void write(int b) throws IOException {
-            if (finished)
-                throw new IOException("write beyond end of stream");
+		@Override
+		public void write(int b) throws IOException {
+			if (finished)
+				throw new IOException("write beyond end of stream");
 
-            dataBuffer.put((byte) b);
+			dataBuffer.put((byte) b);
 
-            if (dataBuffer.position() == dataBuffer.limit()) {
-                writeData();
+			if (dataBuffer.position() == dataBuffer.limit()) {
+				writeData();
 
-                dataBuffer.clear();
-            }
-        }
+				dataBuffer.clear();
+			}
+		}
 
-        @Override
-        public void finish() throws IOException {
-            if (finished)
-                return;
+		@Override
+		public void finish() throws IOException {
+			if (finished)
+				return;
 
-            finished = true;
-            writeData();
-            flush();
-        }
+			finished = true;
+			writeData();
+			flush();
+		}
 
-        private void writeData() throws IOException {
-            int size = dataBuffer.position();
-            if (size == 0)
-                return;
+		private void writeData() throws IOException {
+			int size = dataBuffer.position();
+			if (size == 0)
+				return;
 
-            Arrays.fill(block, (byte) 0);
-            block[3] = (byte) (size & 0xff);
-            System.arraycopy(dataBuffer.array(), 0, block, 128 - size - ((124 - size) % 4), size);
+			Arrays.fill(block, (byte) 0);
+			block[3] = (byte) (size & 0xff);
+			System.arraycopy(dataBuffer.array(), 0, block, 128 - size - ((124 - size) % 4), size);
 
-            try {
-                cipher.doFinal(block, 0, 128, block);
-            } catch (GeneralSecurityException e) {
-                throw new CryptoException(e);
-            }
+			try {
+				cipher.doFinal(block, 0, 128, block);
+			} catch (GeneralSecurityException e) {
+				throw new CryptoException(e);
+			}
 
-            out.write(block);
-        }
-    }
+			out.write(block);
+		}
+	}
 }

@@ -24,6 +24,11 @@ package acmi.l2.clientmod.crypt.rsa;
 import java.math.BigInteger;
 
 public interface L2Ver41x {
+    int L2VERSION_411 = 411;
+    int L2VERSION_412 = 412;
+    int L2VERSION_413 = 413;
+    int L2VERSION_414 = 414;
+
     BigInteger MODULUS_411 = new BigInteger(
             "8c9d5da87b30f5d7cd9dc88c746eaac5" +
                     "bb180267fa11737358c4c95d9adf59dd" +
