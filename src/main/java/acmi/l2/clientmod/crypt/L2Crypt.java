@@ -85,8 +85,8 @@ public class L2Crypt
 
 	public static int readHeader(InputStream input) throws IOException
 	{
-		byte[] header = new byte[HEADER_SIZE];
-		new DataInputStream(input).readFully(header);
+		byte[] header = input.readNBytes(HEADER_SIZE);
+		if (header.length < HEADER_SIZE) { return NO_CRYPT; }
 		String headerStr = new String(header, StandardCharsets.UTF_16LE);
 		if (!headerStr.matches("Lineage2Ver\\d{3}")) { return NO_CRYPT; }
 
@@ -100,19 +100,29 @@ public class L2Crypt
 
 	public static InputStream getInputStream(File file) throws IOException, CryptoException
 	{
-		return decrypt(new FileInputStream(file), file.getName());
+		InputStream input = new FileInputStream(file);
+		try {
+			return decrypt(input, file.getName());
+		} catch (IOException | RuntimeException error) {
+			try {
+				input.close();
+			} catch (IOException closeError) {
+				error.addSuppressed(closeError);
+			}
+			throw error;
+		}
 	}
 
 	public static InputStream decrypt(InputStream input, String fileName) throws IOException, CryptoException
 	{
+		input = new BufferedInputStream(input);
+		input.mark(HEADER_SIZE);
 		int version = readHeader(input);
 		switch (version)
 		{
 			case NO_CRYPT:
-				// reset header
-				if (input instanceof FileInputStream) {
-					((FileInputStream) input).getChannel().position(0);
-				}
+				// Preserve the original stream position when no crypt header is present.
+				input.reset();
 				return input;
 			//XOR
 			case 811:
